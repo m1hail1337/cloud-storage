@@ -2,11 +2,11 @@ package ru.tinkoff.semenov.controllers;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import ru.tinkoff.semenov.Network;
+import ru.tinkoff.semenov.enums.Response;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -37,15 +37,15 @@ public class RegisterController implements Initializable  {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         network = new Network(args -> {
-            if (args[0].equals("success")) {
+            if (args[0].equals(Response.SUCCESS.name())) {
                 newLogin = loginField.getText().trim();
                 newPassword = passwordField.getText().trim();
-                statusInfo.setText("Пользователь " + newLogin + " зарегистрирован.");
+                statusInfo.setText("Пользователь " + newLogin + " успешно зарегистрирован.");
                 statusInfo.setFill(Color.GREEN);
                 statusInfo.setVisible(true);
                 regButton.setVisible(false);
                 network.close();
-            } else if (args[0].equals("failed")) {
+            } else if (args[0].equals(Response.FAILED.name())) {
                 statusInfo.setText("Пользователь " + loginField.getText().trim() + " уже существует.");
                 statusInfo.setFill(Color.RED);
                 statusInfo.setVisible(true);

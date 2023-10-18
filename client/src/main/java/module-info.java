@@ -5,7 +5,9 @@ module ru.tinkoff.semenov {
 
 
     opens ru.tinkoff.semenov to javafx.fxml;
+    opens ru.tinkoff.semenov.controllers to javafx.fxml;
+    opens ru.tinkoff.semenov.enums to javafx.fxml;
     exports ru.tinkoff.semenov;
     exports ru.tinkoff.semenov.controllers;
-    opens ru.tinkoff.semenov.controllers to javafx.fxml;
+    exports ru.tinkoff.semenov.enums;
 }

@@ -22,9 +22,9 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
             String login = args.substring(1, loginLength + 1);
             String password = args.substring(loginLength + 1);
             if (users.containsKey(login) && users.get(login).equals(password)) {
-                return "success";
+                return Response.SUCCESS.name();
             }
-            return "failed";
+            return Response.FAILED.name();
         });
         put("REGISTER", args -> {
             int loginLength = Character.getNumericValue(args.charAt(0));
@@ -33,9 +33,9 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
             if (!users.containsKey(login)) {
                 users.put(login, password);
                 addUserAuthData(login, password);
-                return "success";
+                return Response.SUCCESS.name();
             }
-            return "failed";
+            return Response.FAILED.name();
         });
         // TODO:  put("GET_DATA", args -> {});
     }};

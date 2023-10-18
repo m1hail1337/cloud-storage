@@ -11,6 +11,7 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import ru.tinkoff.semenov.Main;
 import ru.tinkoff.semenov.Network;
+import ru.tinkoff.semenov.enums.Response;
 
 import java.io.IOException;
 import java.net.URL;
@@ -18,8 +19,11 @@ import java.util.ResourceBundle;
 
 public class AuthController implements Initializable {
 
+    private static final String PATH_TO_REGISTER_PAGE = "/register.fxml";
+    private static final String PATH_TO_CATALOG_PAGE = "/catalog.fxml";
+    private static final int MAX_ATTEMPTS = 3;
     private Network network;
-    private int attempts = 3;
+    private int currentAttempts = MAX_ATTEMPTS;
 
     @FXML
     private Text attemptsInfo;
@@ -43,7 +47,7 @@ public class AuthController implements Initializable {
     private void onRegister() {
         regButton.setDisable(true);
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/register.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(PATH_TO_REGISTER_PAGE));
             Parent root = fxmlLoader.load();
             Stage stage = new Stage();
             stage.setScene(new Scene(root, 320, 180));
@@ -62,13 +66,13 @@ public class AuthController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         network = new Network(args -> {
-            attempts--;
-            if ((args[0]).equals("success")) {
+            currentAttempts--;
+            if ((args[0]).equals(Response.SUCCESS.name())) {
                 successAuthAction();
-            } else if (attempts == 0) {
+            } else if (currentAttempts == 0) {
                 attemptsOverAction();
             } else {
-                attemptsInfo.setText("Осталось попыток: " + attempts);
+                attemptsInfo.setText("Осталось попыток: " + currentAttempts);
             }
         });
     }
@@ -82,7 +86,7 @@ public class AuthController implements Initializable {
         continueButton.setVisible(true);
         continueButton.setOnAction(event -> {
             try {
-                FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource("/catalog.fxml"));
+                FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource(PATH_TO_CATALOG_PAGE));
                 Stage stage = new Stage();
                 Scene catalog = new Scene(fxmlLoaderCatalog.load(), 800, 400);
                 stage.setTitle("Каталог");
@@ -102,7 +106,7 @@ public class AuthController implements Initializable {
             loginField.setText(controller.getNewLogin());
             passwordField.setText(controller.getNewPassword());
             attemptsInfo.setText("");
-            if (attempts == 0) {
+            if (currentAttempts == 0) {
                 authButton.setDisable(false);
                 loginField.setDisable(false);
                 passwordField.setDisable(false);
