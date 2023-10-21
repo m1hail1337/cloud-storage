@@ -14,8 +14,9 @@ public class Network {
     private static final String HOST = "localhost";
     private static final int PORT = 8189;
     private SocketChannel channel;
+    private final ClientHandler handler = new ClientHandler();
 
-    public Network(Callback onRequestReceivedCallback) {
+    public Network() {
         Thread t = new Thread(() -> {
             EventLoopGroup workerGroup = new NioEventLoopGroup();
             try {
@@ -28,7 +29,7 @@ public class Network {
                                 channel = socketChannel;
                                 socketChannel.pipeline().addLast(new StringDecoder(),
                                         new StringEncoder(),
-                                        new ClientHandler(onRequestReceivedCallback));
+                                        handler);
                             }
                         });
                 ChannelFuture future = bootstrap.connect(HOST, PORT).sync();
@@ -54,5 +55,9 @@ public class Network {
 
     public void close() {
         channel.close();
+    }
+
+    public ClientHandler getHandler() {
+        return handler;
     }
 }

@@ -1,6 +1,6 @@
 plugins {
     id 'org.javamodularity.moduleplugin' version '1.8.10'
-    id 'org.openjfx.javafxplugin' version '0.0.10'
+    id 'org.openjfx.javafxplugin' version '0.0.13'
     id 'org.beryx.jlink' version '2.25.0'
 }
 
@@ -9,7 +9,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 javafx {
-    version = '17.0.6'
+    version = '18.0.2'
     modules = ['javafx.controls', 'javafx.fxml']
 }
 

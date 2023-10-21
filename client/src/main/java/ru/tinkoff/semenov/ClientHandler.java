@@ -5,16 +5,14 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 public class ClientHandler extends SimpleChannelInboundHandler<String> {
 
-    private final Callback onRequestReceivedCallback;
-
-    public ClientHandler(Callback onRequestReceivedCallback) {
-        this.onRequestReceivedCallback = onRequestReceivedCallback;
-    }
+    private Action currentAction;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) {
-        if (onRequestReceivedCallback != null) {
-            onRequestReceivedCallback.callback(msg);
-        }
+        currentAction.handle(msg);
+    }
+
+    public void setAction (Action action) {
+        this.currentAction = action;
     }
 }

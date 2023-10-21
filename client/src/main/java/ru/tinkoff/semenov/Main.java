@@ -16,9 +16,10 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         FXMLLoader fxmlLoaderAuth = new FXMLLoader(Main.class.getResource(PATH_TO_AUTH_PAGE));
         Scene scene = new Scene(fxmlLoaderAuth.load(), 320, 280);
+        Network network = ((AuthController) fxmlLoaderAuth.getController()).getNetwork();
         stage.setTitle("Авторизация");
         stage.setScene(scene);
-        stage.setOnCloseRequest(event -> ((AuthController) fxmlLoaderAuth.getController()).getNetwork().close());
+        stage.setOnCloseRequest(event -> network.close());
         stage.show();
     }
 
