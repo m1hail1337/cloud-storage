@@ -1,42 +1,29 @@
 package ru.tinkoff.semenov;
 
-import io.netty.channel.*;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import ru.tinkoff.semenov.commands.AuthCommand;
+import ru.tinkoff.semenov.commands.Command;
+import ru.tinkoff.semenov.commands.RegisterCommand;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MainHandler extends SimpleChannelInboundHandler<String> {
-    private static final String SEPARATOR = "|";
+
     private static final String PATH_TO_AUTH_DATA = "server/src/main/resources/users.txt";
-    private static Map<String, String> users = new HashMap<>();
+    private static final String SEPARATOR = "|";
+    private static final Map<String, String> users = new HashMap<>();
+
     private static final Map<String, Command> commands = new HashMap<>() {{
-        put("AUTH", args -> {
-            int loginLength = Character.getNumericValue(args.charAt(0));
-            String login = args.substring(1, loginLength + 1);
-            String password = args.substring(loginLength + 1);
-            if (users.containsKey(login) && users.get(login).equals(password)) {
-                return Response.SUCCESS.name();
-            }
-            return Response.FAILED.name();
-        });
-        put("REGISTER", args -> {
-            int loginLength = Character.getNumericValue(args.charAt(0));
-            String login = args.substring(1, loginLength + 1);
-            String password = args.substring(loginLength + 1);
-            if (!users.containsKey(login)) {
-                users.put(login, password);
-                addUserAuthData(login, password);
-                return Response.SUCCESS.name();
-            }
-            return Response.FAILED.name();
-        });
+        put("AUTH", new AuthCommand());
+        put("REGISTER", new RegisterCommand());
         // TODO:  put("GET_DATA", args -> {});
     }};
 
@@ -60,19 +47,19 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
 
     private void initUsersMap() {
         Path filePath = Paths.get(PATH_TO_AUTH_DATA);
-        try (Stream<String> lines = Files.lines(filePath)){
-            users = lines.collect(Collectors.toMap(k -> k.split("\\s")[0], v -> v.split("\\s")[1]));
+        try (Stream<String> lines = Files.lines(filePath)) {
+            users.clear();
+            users.putAll(lines.collect(Collectors.toMap(k -> k.split("\\s")[0], v -> v.split("\\s")[1])));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Не удалось прочитать файл: " + PATH_TO_AUTH_DATA, e);
         }
     }
 
-    private static void addUserAuthData(String login, String password) {
-        try {
-            Files.write(Paths.get(PATH_TO_AUTH_DATA),
-                    ("\n" + login + " " + password).getBytes(), StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    public static String getPathToAuthData() {
+        return PATH_TO_AUTH_DATA;
+    }
+
+    public static Map<String, String> getUsers() {
+        return users;
     }
 }

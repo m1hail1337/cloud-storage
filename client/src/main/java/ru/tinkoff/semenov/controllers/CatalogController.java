@@ -13,10 +13,9 @@ public class CatalogController implements Initializable {
 
     @FXML
     private Button turnOff;
-
     private Network network;
     private final Action action = args -> {
-        // TODO
+        // TODO: Реализовать логику для взаимодействия с сервером
     };
 
     public void setNetwork(Network network) {

@@ -1,4 +1,4 @@
-package ru.tinkoff.semenov;
+package ru.tinkoff.semenov.commands;
 
 public interface Command {
 
