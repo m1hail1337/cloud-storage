@@ -12,7 +12,7 @@ import io.netty.handler.codec.string.StringEncoder;
 import ru.tinkoff.semenov.enums.Command;
 
 public class Network {
-    private static final String SEPARATOR = "|";
+    public static final String SEPARATOR = "|";
     private static final String HOST = "localhost";
     private static final int PORT = 8189;
     private SocketChannel channel;
@@ -61,5 +61,9 @@ public class Network {
 
     public ClientHandler getHandler() {
         return handler;
+    }
+
+    public SocketChannel getChannel() {
+        return channel;
     }
 }

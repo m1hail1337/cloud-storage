@@ -12,6 +12,7 @@ import javafx.stage.Stage;
 import ru.tinkoff.semenov.Action;
 import ru.tinkoff.semenov.Main;
 import ru.tinkoff.semenov.Network;
+import ru.tinkoff.semenov.Utils;
 import ru.tinkoff.semenov.enums.Response;
 
 import java.io.IOException;
@@ -40,10 +41,10 @@ public class AuthController implements Initializable {
     private int currentAttempts = MAX_ATTEMPTS;
     private Network network;
 
-    private final Action authAction = (args -> {
+    private final Action authAction = (message -> {
         currentAttempts--;
-        if ((args[0]).equals(Response.SUCCESS.name())) {
-            onSuccessAuth();
+        if ((Utils.getStatus(message)).equals(Response.SUCCESS.name())) {
+            onSuccessAuth(Utils.getDirectoriesFromArgs(message));
         } else if (currentAttempts == 0) {
             onAttemptsOver();
         } else {
@@ -68,13 +69,13 @@ public class AuthController implements Initializable {
         network = new Network();
     }
 
-    private void onSuccessAuth() {
+    private void onSuccessAuth(String[] args) {
         attemptsInfo.setText("Добро пожаловать, " + loginField.getText() + "!");
         attemptsInfo.setFill(Color.GREEN);
         regButton.setVisible(false);
         authButton.setVisible(false);
 
-        showButtonToCatalog();
+        showButtonToCatalog(args);
     }
 
     private void onSuccessRegistered(RegisterController controller) {
@@ -105,7 +106,7 @@ public class AuthController implements Initializable {
         passwordField.setEditable(false);
     }
 
-    private void showButtonToCatalog() {
+    private void showButtonToCatalog(String[] userPaths) {
         continueButton.setTextFill(Color.GREEN);
         continueButton.setVisible(true);
         continueButton.setOnAction(event -> {
@@ -113,7 +114,9 @@ public class AuthController implements Initializable {
                 FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource(PATH_TO_CATALOG_PAGE));
                 Stage stage = new Stage();
                 Scene catalog = new Scene(fxmlLoaderCatalog.load(), 800, 400);
-                ((CatalogController) fxmlLoaderCatalog.getController()).setNetwork(network);
+                CatalogController catalogController = fxmlLoaderCatalog.getController();
+                catalogController.setNetwork(network);
+                catalogController.initCatalog(userPaths);
                 stage.setTitle("Каталог");
                 stage.setScene(catalog);
                 ((Stage) continueButton.getScene().getWindow()).close();

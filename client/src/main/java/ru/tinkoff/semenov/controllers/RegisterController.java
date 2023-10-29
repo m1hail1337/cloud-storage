@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import ru.tinkoff.semenov.Action;
 import ru.tinkoff.semenov.Network;
+import ru.tinkoff.semenov.Utils;
 import ru.tinkoff.semenov.enums.Response;
 
 public class RegisterController {
@@ -28,11 +29,11 @@ public class RegisterController {
 
     private RegisteredUser registeredUser;
 
-    private final Action registerAction = args -> {
-        if (args[0].equals(Response.SUCCESS.name())) {
+    private final Action registerAction = message -> {
+        if (Utils.getStatus(message).equals(Response.SUCCESS.name())) {
             onSuccessRegister();
 
-        } else if (args[0].equals(Response.FAILED.name())) {
+        } else if (Utils.getStatus(message).equals(Response.FAILED.name())) {
             statusInfo.setText("Пользователь " + loginField.getText().trim() + " уже существует.");
             statusInfo.setFill(Color.RED);
             statusInfo.setVisible(true);

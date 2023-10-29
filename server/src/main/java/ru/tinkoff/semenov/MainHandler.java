@@ -18,7 +18,8 @@ import java.util.stream.Stream;
 public class MainHandler extends SimpleChannelInboundHandler<String> {
 
     private static final String PATH_TO_AUTH_DATA = "server/src/main/resources/users.txt";
-    private static final String SEPARATOR = "|";
+    private static final String PATH_TO_USERS_DATA ="server/src/main/resources/dirs";
+    public static final String SEPARATOR = "|";
     private static final Map<String, String> users = new HashMap<>();
 
     private static final Map<String, Command> commands = new HashMap<>() {{
@@ -61,5 +62,17 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
 
     public static Map<String, String> getUsers() {
         return users;
+    }
+
+    public static String getUserDirs(String login) {
+        String PATH_SEPARATOR = "\\";
+        Path root = Paths.get(PATH_TO_USERS_DATA + "\\" + login);
+        StringBuilder pathsString = new StringBuilder();
+        try (Stream<Path> paths = Files.walk(root)) {
+            paths.forEach(path -> pathsString.append(path.getFileName().toString()).append(PATH_SEPARATOR));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return pathsString.toString();
     }
 }

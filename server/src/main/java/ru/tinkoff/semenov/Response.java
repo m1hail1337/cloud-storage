@@ -1,5 +1,5 @@
 package ru.tinkoff.semenov;
 
 public enum Response {
-    SUCCESS, FAILED
+    SUCCESS, FAILED, CATALOG
 }

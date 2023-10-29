@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.layout.VBox?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.text.Text?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.tinkoff.semenov.controllers.CatalogController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
-    <Text text="Для успешного завершения *тык*" />
-    <Button fx:id="turnOff" text="Отключить сеть" />
-    <!--TODO: Сделать разметку каталога-->
+<?import javafx.geometry.Insets?>
+<VBox alignment="CENTER" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.tinkoff.semenov.controllers.CatalogController">
+    <MenuBar>
+        <Menu text="Файл">
+            <MenuItem text="Выйти" onAction="#exitApplication"/>
+        </Menu>
+    </MenuBar>
+    <TextField fx:id="currentPath" editable="false" />
+    <ListView fx:id="filesList" VBox.vgrow="ALWAYS"/>
+    <HBox spacing="50" >
+        <Button text="Загрузить" textFill="green" maxWidth="Infinity" />
+        <Button text="Вырезать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
+        <Button text="Копировать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
+        <Button text="Переименовать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
+        <Button text="Скачать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
+        <padding>
+            <Insets top="10" bottom="10" left="10" right="10"/>
+        </padding>
+    </HBox>
 </VBox>
