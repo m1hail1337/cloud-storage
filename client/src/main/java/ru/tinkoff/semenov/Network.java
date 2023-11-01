@@ -11,12 +11,33 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import ru.tinkoff.semenov.enums.Command;
 
+/**
+ * Основной класс сетевого взаимодействия с сервером. Здесь настраивается соединение, устанавливаются
+ * обработчики ответов, выполняется отправка команд на сервер.
+ */
 public class Network {
+    /**
+     * Разделитель между командами и её аргументами
+     */
     public static final String SEPARATOR = "|";
+    /**
+     * Хост сервера
+     */
     private static final String HOST = "localhost";
+    /**
+     * Порт подключения к серверу
+     */
     private static final int PORT = 8189;
+    /**
+     * Канал соединения с сервером по которому идет взаимодействие
+     */
     private SocketChannel channel;
+    /**
+     * Обработчик сообщений клиента
+     */
     private final ClientHandler handler = new ClientHandler();
+
+    private String login;
 
     public Network() {
         Thread t = new Thread(() -> {
@@ -45,15 +66,34 @@ public class Network {
         t.start();
     }
 
+    /**
+     * Отправка на сервер команды для регистрации нового пользователя
+     * @param login логин нового пользователя
+     * @param password пароль нового пользователя
+     */
     public void register(String login, String password) {
         channel.writeAndFlush(Command.REGISTER.name() + SEPARATOR + login.length() + login + password);
     }
 
+    /**
+     * Отправка на сервер команды авторизации
+     * @param login логин пользователя
+     * @param password пароль пользователя
+     */
     public void authorize(String login, String password) {
         channel.writeAndFlush(Command.AUTH.name() + SEPARATOR + login.length() + login + password);
     }
 
+    public void createNewDirectory(String path) {
+        channel.writeAndFlush(Command.NEW_DIR.name() + SEPARATOR + path);
+    }
+
+    public void deleteFile(String path) {
+        channel.writeAndFlush(Command.DELETE.name() + SEPARATOR + path);
+    }
+
     // TODO: public void getFiles() {}
+
 
     public void close() {
         channel.close();
@@ -65,5 +105,17 @@ public class Network {
 
     public SocketChannel getChannel() {
         return channel;
+    }
+
+    public void setLogin(String login) {
+        this.login = login;
+    }
+
+    public void cutFile(String file, String destination) {
+        channel.writeAndFlush(Command.CUT.name() + SEPARATOR + file + SEPARATOR + destination);
+    }
+
+    public void copyFile(String file, String destination) {
+        channel.writeAndFlush(Command.COPY.name() + SEPARATOR + file + SEPARATOR + destination);
     }
 }

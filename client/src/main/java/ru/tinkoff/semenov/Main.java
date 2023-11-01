@@ -8,8 +8,14 @@ import ru.tinkoff.semenov.controllers.AuthController;
 
 import java.io.IOException;
 
+/**
+ * Точка входа клиентского приложения.
+ */
 public class Main extends Application {
 
+    /**
+     * Путь к fxml-файлу с начальной страницы (страницей авторизации)
+     */
     private static final String PATH_TO_AUTH_PAGE = "/auth.fxml";
 
     @Override
@@ -20,6 +26,7 @@ public class Main extends Application {
         stage.setTitle("Авторизация");
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> network.close());
+
         stage.show();
     }
 

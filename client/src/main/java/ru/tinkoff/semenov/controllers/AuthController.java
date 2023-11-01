@@ -44,7 +44,7 @@ public class AuthController implements Initializable {
     private final Action authAction = (message -> {
         currentAttempts--;
         if ((Utils.getStatus(message)).equals(Response.SUCCESS.name())) {
-            onSuccessAuth(Utils.getDirectoriesFromArgs(message));
+            onSuccessAuth(Utils.getArgs(message));
         } else if (currentAttempts == 0) {
             onAttemptsOver();
         } else {
@@ -74,6 +74,7 @@ public class AuthController implements Initializable {
         attemptsInfo.setFill(Color.GREEN);
         regButton.setVisible(false);
         authButton.setVisible(false);
+        network.setLogin(loginField.getText());
 
         showButtonToCatalog(args);
     }
@@ -110,20 +111,7 @@ public class AuthController implements Initializable {
         continueButton.setTextFill(Color.GREEN);
         continueButton.setVisible(true);
         continueButton.setOnAction(event -> {
-            try {
-                FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource(PATH_TO_CATALOG_PAGE));
-                Stage stage = new Stage();
-                Scene catalog = new Scene(fxmlLoaderCatalog.load(), 800, 400);
-                CatalogController catalogController = fxmlLoaderCatalog.getController();
-                catalogController.setNetwork(network);
-                catalogController.initCatalog(userPaths);
-                stage.setTitle("Каталог");
-                stage.setScene(catalog);
-                ((Stage) continueButton.getScene().getWindow()).close();
-                stage.show();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            showCatalogStage(userPaths);
         });
     }
 
@@ -144,6 +132,26 @@ public class AuthController implements Initializable {
             });
             stage.show();
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void showCatalogStage(String[] userPaths) {
+        try {
+            FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource(PATH_TO_CATALOG_PAGE));
+            Stage stage = new Stage();
+            Scene catalog = new Scene(fxmlLoaderCatalog.load(), 800, 400);
+            CatalogController catalogController = fxmlLoaderCatalog.getController();
+            catalogController.setNetwork(network);
+            catalogController.initCatalog(userPaths);
+            stage.setTitle("Каталог");
+            stage.setScene(catalog);
+            ((Stage) continueButton.getScene().getWindow()).close();
+            stage.setOnCloseRequest(event -> {
+                network.close();
+            });
+            stage.show();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

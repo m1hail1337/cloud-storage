@@ -10,16 +10,9 @@
             <MenuItem text="Выйти" onAction="#exitApplication"/>
         </Menu>
     </MenuBar>
-    <TextField fx:id="currentPath" editable="false" />
-    <ListView fx:id="filesList" VBox.vgrow="ALWAYS"/>
-    <HBox spacing="50" >
-        <Button text="Загрузить" textFill="green" maxWidth="Infinity" />
-        <Button text="Вырезать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
-        <Button text="Копировать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
-        <Button text="Переименовать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
-        <Button text="Скачать" HBox.hgrow="ALWAYS" disable="true" maxWidth="Infinity"/>
-        <padding>
-            <Insets top="10" bottom="10" left="10" right="10"/>
-        </padding>
+    <HBox spacing="10">
+        <Button fx:id="prevDirButton" text="Назад" disable="true"/>
+        <TextField fx:id="currentPath" editable="false" HBox.hgrow="ALWAYS" focusTraversable="false"/>
     </HBox>
+    <ListView fx:id="filesList" />
 </VBox>
