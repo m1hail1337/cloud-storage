@@ -6,6 +6,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import ru.tinkoff.semenov.Action;
@@ -24,6 +26,8 @@ public class LoadController implements Initializable {
     private boolean isFileLoaded = false;
 
     @FXML
+    private Text infoText;
+    @FXML
     private ProgressBar progress;
     @FXML
     private Button finishButton;
@@ -33,6 +37,7 @@ public class LoadController implements Initializable {
             finishButton.setVisible(true);
             progress.setProgress(1.0);
             isFileLoaded = true;
+            infoText.setText("Файл успешно сохранен.");
         }
     };
 
@@ -49,6 +54,8 @@ public class LoadController implements Initializable {
                     throw new RuntimeException(e);
                 }
             }
+            infoText.setText("Я не завис :)");
+            infoText.setFill(Color.GREEN);
         }).start();
     }
 
@@ -63,6 +70,7 @@ public class LoadController implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         progress.setProgress(0.0);
+        infoText.setText("Статус загрузки");
     }
 
     public boolean isFileLoaded() {
