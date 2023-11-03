@@ -6,7 +6,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import ru.tinkoff.semenov.Network;
@@ -44,7 +43,13 @@ public class DirectoryCreatorController {
 
     @FXML
     private void cancelCreateNewDir(ActionEvent event) {
-        ((Stage) ((Button) event.getSource()).getScene().getWindow()).close();
+        closeCreator(((Button) event.getSource()).getScene().getWindow());
+    }
+
+    private void closeCreator(Window window) {
+        Platform.runLater(() -> {
+            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
+        });
     }
 
     public void setNetwork(Network network) {
@@ -61,12 +66,5 @@ public class DirectoryCreatorController {
 
     public String getNewDirName() {
         return newDirName;
-    }
-
-    private void closeCreator(Window window) {
-
-        Platform.runLater(() -> {
-            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
-        });
     }
 }

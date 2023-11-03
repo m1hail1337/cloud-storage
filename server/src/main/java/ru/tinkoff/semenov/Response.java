@@ -4,5 +4,5 @@ package ru.tinkoff.semenov;
  * Возможные ответы сервера на запросы
  */
 public enum Response {
-    SUCCESS, FAILED, EMPTY, READY
+    SUCCESS, FAILED, EMPTY, LOADED
 }

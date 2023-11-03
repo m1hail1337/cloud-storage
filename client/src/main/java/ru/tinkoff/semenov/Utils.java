@@ -19,7 +19,7 @@ public class Utils {
     }
 
     public static boolean isRegularFile(String path) {
-        String regex = "^[a-zA-Z0-9-_!@#$%&^()?\\s]+\\.[a-z]+$";
+        String regex = "^[а-яА-Яa-zA-Z0-9-_!@#$%&^()?\\s]+\\.[a-z]+$";
         return path.matches(regex);
     }
 

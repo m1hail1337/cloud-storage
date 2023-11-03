@@ -54,6 +54,7 @@ public class Network {
                             protected void initChannel(SocketChannel socketChannel) {
                                 channel = socketChannel;
                                 ChannelPipeline pipeline = socketChannel.pipeline();
+
                                 pipeline.addLast("stringDecoder", new StringDecoder());
                                 pipeline.addLast("stringEncoder", new StringEncoder());
                                 pipeline.addLast(new ChunkedWriteHandler());
@@ -73,7 +74,8 @@ public class Network {
 
     /**
      * Отправка на сервер команды для регистрации нового пользователя
-     * @param login логин нового пользователя
+     *
+     * @param login    логин нового пользователя
      * @param password пароль нового пользователя
      */
     public void register(String login, String password) {
@@ -82,7 +84,8 @@ public class Network {
 
     /**
      * Отправка на сервер команды авторизации
-     * @param login логин пользователя
+     *
+     * @param login    логин пользователя
      * @param password пароль пользователя
      */
     public void authorize(String login, String password) {
@@ -91,7 +94,8 @@ public class Network {
 
     /**
      * Отправка на сервер команды перемещения (вырезки) файла
-     * @param file название файла (который вырезаем)
+     *
+     * @param file        название файла (который вырезаем)
      * @param destination точка назначение (куда вставляем)
      */
     public void cutFile(String file, String destination) {
@@ -100,7 +104,8 @@ public class Network {
 
     /**
      * Отправка на сервер команды копирования файла
-     * @param file название файла (который вырезаем)
+     *
+     * @param file        название файла (который вырезаем)
      * @param destination точка назначение (куда вставляем)
      */
     public void copyFile(String file, String destination) {
@@ -109,19 +114,17 @@ public class Network {
 
     /**
      * Отправка на сервер файла пользователя
-     * @param file файл для передачи
+     *
+     * @param file        файл для передачи
      * @param destination путь к папке, где файл будет сохранен на сервере
      */
     public void loadFile(ChunkedFile file, String destination) {
         channel.writeAndFlush(Command.LOAD.name() + SEPARATOR + destination + SEPARATOR + file.length());
+
         new Thread(() -> {
             try {
-                while (!file.isEndOfInput()) {
-                    if (loadCanceled) {
-                        break;
-                    } else {
-                        channel.writeAndFlush(file.readChunk(ByteBufAllocator.DEFAULT));
-                    }
+                while (!file.isEndOfInput() && !loadCanceled) {
+                    channel.writeAndFlush(file.readChunk(ByteBufAllocator.DEFAULT));
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -131,6 +134,7 @@ public class Network {
 
     /**
      * Отправка на сервер команды создания новой директории
+     *
      * @param path путь к новой директории
      */
     public void createNewDirectory(String path) {
@@ -139,6 +143,7 @@ public class Network {
 
     /**
      * Отправка на сервер команды удаления файла
+     *
      * @param path путь к файлу (который хотим удалить)
      */
     public void deleteFile(String path) {

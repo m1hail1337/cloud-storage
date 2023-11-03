@@ -37,14 +37,21 @@ public class LoadController implements Initializable {
             finishButton.setVisible(true);
             progress.setProgress(1.0);
             isFileLoaded = true;
+            infoText.setFill(Color.GREEN);
             infoText.setText("Файл успешно сохранен.");
+
+        } else if (message.equals("FAILED")) {
+            infoText.setText("Ошибка на сервере");
+            infoText.setFill(Color.RED);
         }
     };
 
     public void startProgress() {
         network.getHandler().setAction(loadAction);
+
         new Thread(() -> {
             while (file.currentOffset() < file.endOffset()) {
+
                 Platform.runLater(() -> {
                     progress.setProgress((double) file.currentOffset() / file.endOffset());
                 });
@@ -54,8 +61,11 @@ public class LoadController implements Initializable {
                     throw new RuntimeException(e);
                 }
             }
-            infoText.setText("Я не завис :)");
-            infoText.setFill(Color.GREEN);
+
+            if (!finishButton.isVisible()) {
+                infoText.setText("Я не завис :)");
+                infoText.setFill(Color.GREEN);
+            }
         }).start();
     }
 

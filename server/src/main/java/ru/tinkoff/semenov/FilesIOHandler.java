@@ -25,6 +25,9 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
      */
     private final File file;
 
+    /**
+     * Размер получаемого файла
+     */
     private final long fileLength;
     /**
      * Путь к получаемому файлу
@@ -54,10 +57,12 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
         ByteBuffer nioBuffer = ((ByteBuf) msg).nioBuffer();
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         FileChannel channel = raf.getChannel();
+
         while (nioBuffer.hasRemaining()) {
             channel.position(raf.length());
             channel.write(nioBuffer);
         }
+
         byteBuf.release();
         channel.close();
         raf.close();
@@ -81,7 +86,8 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * Если одно из стоп-значений принято мы возвращаем в конвейер строковые кодеры/декодеры и
-     * текущий хендлер меняем обратно на стандартный. Если отправка завершена некорректно - удаляем файл.
+     * текущий хендлер меняем обратно на стандартный. Если отправка завершена некорректно - удаляем файл и отправляем
+     * {@link Response#FAILED}, если загрузка успешна - отправляем {@link Response#LOADED}.
      * @param ctx текущий контекст канала
      */
     private void switchToDefaultHandler(ChannelHandlerContext ctx) {
@@ -91,7 +97,9 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
 
         if (isLoadCanceled) {
             MainHandler.getCommands().get("DELETE").execute(path);
+            ctx.writeAndFlush(Response.FAILED.name());
+        } else {
+            ctx.writeAndFlush(Response.LOADED.name());
         }
-        ctx.writeAndFlush("LOADED");
     }
 }
