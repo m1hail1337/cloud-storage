@@ -1,5 +1,6 @@
 package ru.tinkoff.semenov.controllers;
 
+import io.netty.handler.stream.ChunkedFile;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.IntegerProperty;
@@ -16,6 +17,7 @@ import javafx.util.Duration;
 import ru.tinkoff.semenov.Action;
 import ru.tinkoff.semenov.Network;
 import ru.tinkoff.semenov.Utils;
+import ru.tinkoff.semenov.enums.Response;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +30,8 @@ public class CatalogController implements Initializable {
 
     public static final String PATH_SEPARATOR = "\\";
     private static final String PATH_TO_DIR_CREATOR_PAGE = "/directory_creator.fxml";
+    private static final String PATH_TO_LOAD_PROGRESS_PAGE = "/load_progress.fxml";
+    private static final String PATH_TO_DOWNLOADS = "client\\downloads";
 
     @FXML
     private ListView<String> filesList;
@@ -43,8 +47,10 @@ public class CatalogController implements Initializable {
 
     private final Map<String, Set<String>> catalog = new TreeMap<>();
 
-    private final Action action = (message) -> {
-        // TODO: Load file function
+    private final Action downloadAction = (message) -> {
+        if (Utils.getStatus(message).equals(Response.SUCCESS.name())) {
+            // TODO: Скачивание файлов
+        }
     };
 
     public void setNetwork(Network network) {
@@ -95,7 +101,7 @@ public class CatalogController implements Initializable {
 
         MenuItem load = new MenuItem("Загрузить");
         load.setOnAction(event -> {
-            loadFile(currentDirectory);
+            loadFile(currentPath.getText());
         });
 
         MenuItem open = new MenuItem("Открыть");
@@ -151,6 +157,7 @@ public class CatalogController implements Initializable {
             if (!event.getPickResult().getIntersectedNode().isFocused() || filesList.getItems().isEmpty()) {
                 toggleMenuItems(contextMenu.getItems(), true);
                 createDir.setDisable(false);
+                load.setDisable(false);
                 filesList.getSelectionModel().clearSelection();
 
             } else {
@@ -169,6 +176,7 @@ public class CatalogController implements Initializable {
         String fileName = pathToMove.getFileName().toString();
 
         catalog.get(destinationPath.getFileName().toString()).add(fileName);
+
         if (isLastCut) {
             catalog.get(pathToMove.getParent().getFileName().toString()).remove(fileName);
             network.cutFile(buffer, destination + PATH_SEPARATOR + fileName);
@@ -191,7 +199,7 @@ public class CatalogController implements Initializable {
             DirectoryCreatorController controller = fxmlLoader.getController();
             controller.setNetwork(network);
             controller.setCurrentDirectory(currentPath.getText());
-            controller.setFilesList(new ArrayList<>(filesList.getItems()));
+            controller.setCatalog(catalog);
             stage.setTitle("Создание папки");
             stage.setOnCloseRequest(event -> {
                 String dirName = controller.getNewDirName();
@@ -201,8 +209,6 @@ public class CatalogController implements Initializable {
                     catalog.put(dirName, new HashSet<>());
                     catalog.get(currentDirectory).add(dirName);
                 }
-
-                network.getHandler().setAction(action);
             });
 
             stage.show();
@@ -214,13 +220,47 @@ public class CatalogController implements Initializable {
     private void loadFile(String destinationDirectory) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Выберите файл для загрузки");
-        File selectedFile = fileChooser.showSaveDialog(filesList.getScene().getWindow());
-        if (selectedFile != null) {
-            try {
-                // TODO
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        try {
+            File selectedFile = fileChooser.showOpenDialog(filesList.getScene().getWindow());
+            if (selectedFile != null) {
+                ChunkedFile sendFile = new ChunkedFile(selectedFile);
+                showLoadProgress(sendFile, selectedFile.getName(), destinationDirectory);
+                network.loadFile(sendFile, destinationDirectory + PATH_SEPARATOR + selectedFile.getName());
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void showLoadProgress(ChunkedFile sendFile, String filename, String destination) {
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(PATH_TO_LOAD_PROGRESS_PAGE));
+            Stage stage = new Stage();
+            stage.setScene(new Scene(fxmlLoader.load()));
+            LoadController controller = fxmlLoader.getController();
+            controller.setFile(sendFile);
+            controller.setNetwork(network);
+            stage.setTitle("Отправка файла");
+            stage.setOnCloseRequest(event -> {
+                if (controller.isFileLoaded()) {
+                    addNewFile(filename, destination);
+                } else {
+                    network.setLoadCanceled(true);
+                }
+            });
+
+            stage.show();
+            controller.startProgress();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void addNewFile(String filename, String destination) {
+        catalog.get(Path.of(destination).getFileName().toString()).add(filename);
+
+        if (currentPath.getText().equals(destination)) {
+            filesList.getItems().add(filename);
         }
     }
 

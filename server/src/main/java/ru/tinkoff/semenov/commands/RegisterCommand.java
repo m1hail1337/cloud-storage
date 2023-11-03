@@ -4,7 +4,9 @@ import ru.tinkoff.semenov.MainHandler;
 import ru.tinkoff.semenov.Response;
 
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 
 /**
  * Команда для регистрации нового пользователя в системе
@@ -29,7 +31,7 @@ public class RegisterCommand implements Command {
             addUserAuthData(login, password);
             try {
                 Files.createDirectory(Paths
-                        .get(MainHandler.getPathToUsersData() + FileSystems.getDefault().getSeparator() + login));
+                        .get(MainHandler.getPathToUsersData() + FILE_SEPARATOR + login));
             } catch (IOException e) {
                 throw new RuntimeException("Не удалось создать директорию в " + MainHandler.getPathToUsersData(), e);
             }
@@ -39,7 +41,7 @@ public class RegisterCommand implements Command {
     }
 
     /**
-     * Метод создаю
+     * Метод создающий запись о регистрационных данных нового пользователя
      * @param login логин нового пользователя
      * @param password пароль нового пользователя
      */

@@ -1,5 +1,6 @@
 package ru.tinkoff.semenov;
 
+import static io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import ru.tinkoff.semenov.commands.*;
@@ -14,8 +15,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Серверный обработчик сообщений
+ * Серверный обработчик сообщений. Аннотация {@link Sharable} позволяет сохранить текущий хендлер и переключится на него
+ * после передачи или загрузки файла.
  */
+@Sharable
 public class MainHandler extends SimpleChannelInboundHandler<String> {
 
     /**
@@ -46,6 +49,7 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
         put("DELETE", new DeleteCommand());
         put("CUT", new CutCommand());
         put("COPY", new CopyCommand());
+        put("LOAD", new LoadCommand());
         // TODO:  put("GET_DATA", args -> {});
     }};
 
@@ -66,7 +70,15 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
     public void channelRead0(ChannelHandlerContext ctx, String msg) {
         String command = msg.substring(0, msg.indexOf(SEPARATOR));
         String args = msg.substring(msg.indexOf(SEPARATOR) + 1);
-        ctx.channel().writeAndFlush(commands.get(command).execute(args));
+        String response = commands.get(command).execute(args);
+
+        if (command.equals("LOAD")) {
+            switchHandlerToFilesIO(ctx, args);
+        }
+
+        if (!response.equals(Response.EMPTY.name())) {
+            ctx.channel().writeAndFlush(response);
+        }
     }
 
     /**
@@ -77,6 +89,7 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         ctx.close();
+        System.out.println("Клиент отключился");
         throw new RuntimeException("Ошибка сервера", cause);
     }
 
@@ -91,18 +104,6 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
         } catch (IOException e) {
             throw new RuntimeException("Не удалось прочитать файл: " + PATH_TO_AUTH_DATA, e);
         }
-    }
-
-    public static String getPathToAuthData() {
-        return PATH_TO_AUTH_DATA;
-    }
-
-    public static String getPathToUsersData() {
-        return PATH_TO_USERS_DATA;
-    }
-
-    public static Map<String, String> getUsers() {
-        return users;
     }
 
     /**
@@ -120,5 +121,37 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
             throw new RuntimeException(e);
         }
         return pathsString.toString();
+    }
+
+    /**
+     * Метод подготавливает канал к получению файлового потока: удаляет строковые кодеры/декодеры
+     * ({@link io.netty.handler.codec.string.StringEncoder}
+     * и {@link io.netty.handler.codec.string.StringDecoder}) из конвейера и заменяет стандартный хендлер на файловый
+     * @param ctx текущий контекст
+     * @param args директория, куда будет производиться запись нового файла и размер файла (через {@link #SEPARATOR})
+     */
+    private void switchHandlerToFilesIO(ChannelHandlerContext ctx, String args) {
+        String filePath = args.substring(0, args.indexOf(SEPARATOR));
+        long fileLength = Long.parseLong(args.substring(args.indexOf(SEPARATOR) + 1));
+        ctx.pipeline().replace("defaultHandler", "fileHandler",
+                new FilesIOHandler(PATH_TO_USERS_DATA + "\\" + filePath, fileLength, this));
+        ctx.pipeline().remove("stringDecoder");
+        ctx.pipeline().remove("stringEncoder");
+    }
+
+    public static String getPathToAuthData() {
+        return PATH_TO_AUTH_DATA;
+    }
+
+    public static String getPathToUsersData() {
+        return PATH_TO_USERS_DATA;
+    }
+
+    public static Map<String, String> getUsers() {
+        return users;
+    }
+
+    public static Map<String, Command> getCommands() {
+        return commands;
     }
 }

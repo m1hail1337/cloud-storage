@@ -9,17 +9,16 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import ru.tinkoff.semenov.Action;
 import ru.tinkoff.semenov.Network;
 import ru.tinkoff.semenov.Utils;
-import ru.tinkoff.semenov.enums.Response;
 
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DirectoryCreatorController {
 
     private Network network;
-    private List<String> filesList;
+    private Map<String, Set<String>> catalog;
     private String currentDirectory;
     private String newDirName;
 
@@ -28,27 +27,15 @@ public class DirectoryCreatorController {
     @FXML
     private Text invalidMessage;
 
-    private final Action createDirAction = (message) -> {
-        if (Utils.getStatus(message).equals(Response.SUCCESS.name())) {
-            this.newDirName = newDirField.getText();
-            Window window = newDirField.getScene().getWindow();
-
-            Platform.runLater(() -> {
-                window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
-            });
-        } else {
-            invalidMessage.setText("Ошибка сервера");
-        }
-    };
-
     @FXML
     private void onCreateNewDir() {
         String newDirectory = newDirField.getText();
 
-        if (Utils.isDirectory(newDirectory) && !filesList.contains(newDirectory)) {
-            network.getHandler().setAction(createDirAction);
+        if (Utils.isDirectory(newDirectory) && !catalog.containsKey(newDirectory)) {
+            this.newDirName = newDirectory;
             network.createNewDirectory(currentDirectory + CatalogController.PATH_SEPARATOR + newDirectory);
 
+            closeCreator(newDirField.getScene().getWindow());
         } else {
             invalidMessage.setText("Недопустимое имя папки");
             invalidMessage.setVisible(true);
@@ -68,11 +55,18 @@ public class DirectoryCreatorController {
         this.currentDirectory = currentDirectory;
     }
 
-    public void setFilesList(List<String> filesList) {
-        this.filesList = filesList;
+    public void setCatalog(Map<String, Set<String>> catalog) {
+        this.catalog = catalog;
     }
 
     public String getNewDirName() {
         return newDirName;
+    }
+
+    private void closeCreator(Window window) {
+
+        Platform.runLater(() -> {
+            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
+        });
     }
 }

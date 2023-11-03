@@ -1,7 +1,5 @@
 package ru.tinkoff.semenov;
 
-import ru.tinkoff.semenov.Network;
-
 public class Utils {
 
     public static String getStatus(String message) {
@@ -21,7 +19,7 @@ public class Utils {
     }
 
     public static boolean isRegularFile(String path) {
-        String regex = "^[a-zA-Z0-9-_!@#$%&^()?]+\\.[a-z]+$";
+        String regex = "^[a-zA-Z0-9-_!@#$%&^()?\\s]+\\.[a-z]+$";
         return path.matches(regex);
     }
 

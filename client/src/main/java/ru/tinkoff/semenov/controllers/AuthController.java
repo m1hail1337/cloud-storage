@@ -74,7 +74,6 @@ public class AuthController implements Initializable {
         attemptsInfo.setFill(Color.GREEN);
         regButton.setVisible(false);
         authButton.setVisible(false);
-        network.setLogin(loginField.getText());
 
         showButtonToCatalog(args);
     }

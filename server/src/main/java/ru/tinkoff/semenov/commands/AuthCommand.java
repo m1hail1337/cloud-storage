@@ -24,10 +24,10 @@ public class AuthCommand implements Command {
         String password = args.substring(loginLength + 1);
         if (MainHandler.getUsers().containsKey(login)) {
             if (MainHandler.getUsers().get(login).equals(password)) {
-                return Response.SUCCESS.name() + MainHandler.SEPARATOR + MainHandler.getUserDirs(login);
+                return Response.SUCCESS.name() + ARGS_SEPARATOR + MainHandler.getUserDirs(login);
             }
-            return Response.FAILED.name() + MainHandler.SEPARATOR + "Incorrect password";
+            return Response.FAILED.name() + ARGS_SEPARATOR + "Incorrect password";
         }
-        return Response.FAILED.name() + MainHandler.SEPARATOR + "There's no user with this login";
+        return Response.FAILED.name() + ARGS_SEPARATOR + "There's no user with this login";
     }
 }

@@ -1,14 +1,18 @@
 package ru.tinkoff.semenov;
 
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedWriteHandler;
 import ru.tinkoff.semenov.enums.Command;
 
 /**
@@ -36,8 +40,7 @@ public class Network {
      * Обработчик сообщений клиента
      */
     private final ClientHandler handler = new ClientHandler();
-
-    private String login;
+    private boolean loadCanceled;
 
     public Network() {
         Thread t = new Thread(() -> {
@@ -50,9 +53,11 @@ public class Network {
                             @Override
                             protected void initChannel(SocketChannel socketChannel) {
                                 channel = socketChannel;
-                                socketChannel.pipeline().addLast(new StringDecoder(),
-                                        new StringEncoder(),
-                                        handler);
+                                ChannelPipeline pipeline = socketChannel.pipeline();
+                                pipeline.addLast("stringDecoder", new StringDecoder());
+                                pipeline.addLast("stringEncoder", new StringEncoder());
+                                pipeline.addLast(new ChunkedWriteHandler());
+                                pipeline.addLast("defaultHandler", handler);
                             }
                         });
                 ChannelFuture future = bootstrap.connect(HOST, PORT).sync();
@@ -84,10 +89,58 @@ public class Network {
         channel.writeAndFlush(Command.AUTH.name() + SEPARATOR + login.length() + login + password);
     }
 
+    /**
+     * Отправка на сервер команды перемещения (вырезки) файла
+     * @param file название файла (который вырезаем)
+     * @param destination точка назначение (куда вставляем)
+     */
+    public void cutFile(String file, String destination) {
+        channel.writeAndFlush(Command.CUT.name() + SEPARATOR + file + SEPARATOR + destination);
+    }
+
+    /**
+     * Отправка на сервер команды копирования файла
+     * @param file название файла (который вырезаем)
+     * @param destination точка назначение (куда вставляем)
+     */
+    public void copyFile(String file, String destination) {
+        channel.writeAndFlush(Command.COPY.name() + SEPARATOR + file + SEPARATOR + destination);
+    }
+
+    /**
+     * Отправка на сервер файла пользователя
+     * @param file файл для передачи
+     * @param destination путь к папке, где файл будет сохранен на сервере
+     */
+    public void loadFile(ChunkedFile file, String destination) {
+        channel.writeAndFlush(Command.LOAD.name() + SEPARATOR + destination + SEPARATOR + file.length());
+        new Thread(() -> {
+            try {
+                while (!file.isEndOfInput()) {
+                    if (loadCanceled) {
+                        break;
+                    } else {
+                        channel.writeAndFlush(file.readChunk(ByteBufAllocator.DEFAULT));
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+    }
+
+    /**
+     * Отправка на сервер команды создания новой директории
+     * @param path путь к новой директории
+     */
     public void createNewDirectory(String path) {
         channel.writeAndFlush(Command.NEW_DIR.name() + SEPARATOR + path);
     }
 
+    /**
+     * Отправка на сервер команды удаления файла
+     * @param path путь к файлу (который хотим удалить)
+     */
     public void deleteFile(String path) {
         channel.writeAndFlush(Command.DELETE.name() + SEPARATOR + path);
     }
@@ -103,19 +156,7 @@ public class Network {
         return handler;
     }
 
-    public SocketChannel getChannel() {
-        return channel;
-    }
-
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
-    public void cutFile(String file, String destination) {
-        channel.writeAndFlush(Command.CUT.name() + SEPARATOR + file + SEPARATOR + destination);
-    }
-
-    public void copyFile(String file, String destination) {
-        channel.writeAndFlush(Command.COPY.name() + SEPARATOR + file + SEPARATOR + destination);
+    public void setLoadCanceled(boolean loadCanceled) {
+        this.loadCanceled = loadCanceled;
     }
 }

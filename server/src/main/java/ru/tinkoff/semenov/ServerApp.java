@@ -3,12 +3,14 @@ package ru.tinkoff.semenov;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 /**
  * Точка запуска и настройки сервера.
@@ -34,7 +36,11 @@ public class ServerApp {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) {
-                            socketChannel.pipeline().addLast(new StringDecoder(), new StringEncoder(), new MainHandler());
+                            ChannelPipeline pipeline = socketChannel.pipeline();
+                            pipeline.addLast("stringDecoder", new StringDecoder());
+                            pipeline.addLast("stringEncoder", new StringEncoder());
+                            pipeline.addLast("chunkedWriter", new ChunkedWriteHandler());
+                            pipeline.addLast("defaultHandler", new MainHandler());
                         }
                     });
             ChannelFuture future = bootstrap.bind(HOST, PORT).sync();
