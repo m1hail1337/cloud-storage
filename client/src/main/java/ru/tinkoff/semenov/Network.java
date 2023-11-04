@@ -18,6 +18,7 @@ import ru.tinkoff.semenov.enums.Command;
 /**
  * Основной класс сетевого взаимодействия с сервером. Здесь настраивается соединение, устанавливаются
  * обработчики ответов, выполняется отправка команд на сервер.
+ * <br>*ВАЖНО*: даже в команду без аргументов необходимо добавить {@link Network#SEPARATOR}!
  */
 public class Network {
     /**
@@ -39,8 +40,10 @@ public class Network {
     /**
      * Обработчик сообщений клиента
      */
-    private final ClientHandler handler = new ClientHandler();
+    private final DefaultClientHandler defaultHandler = new DefaultClientHandler();
+    private FileClientHandler fileHandler;
     private boolean loadCanceled;
+
 
     public Network() {
         Thread t = new Thread(() -> {
@@ -58,7 +61,7 @@ public class Network {
                                 pipeline.addLast("stringDecoder", new StringDecoder());
                                 pipeline.addLast("stringEncoder", new StringEncoder());
                                 pipeline.addLast(new ChunkedWriteHandler());
-                                pipeline.addLast("defaultHandler", handler);
+                                pipeline.addLast("defaultHandler", defaultHandler);
                             }
                         });
                 ChannelFuture future = bootstrap.connect(HOST, PORT).sync();
@@ -126,10 +129,35 @@ public class Network {
                 while (!file.isEndOfInput() && !loadCanceled) {
                     channel.writeAndFlush(file.readChunk(ByteBufAllocator.DEFAULT));
                 }
+                file.close();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }).start();
+    }
+
+    /**
+     * Отправляем запрос на получение файла с сервера, конкретно размер файла.
+     * @param filePath путь к файлу
+     */
+    public void downloadRequest(String filePath) {
+        channel.writeAndFlush(Command.FILE_LENGTH.name() + SEPARATOR + filePath);
+    }
+
+    /**
+     * При успешном получении размера файла проводим манипуляции с конвейером обработчиков для настройки его на получение
+     * файловых байтов и отправляем команду, которая начинает отправку фрагментов файла.
+     * @param filename имя скачиваемого файла
+     * @param fileLength размер скачиваемого файла (в байтах)
+     */
+    public void downloadFile(String filename, long fileLength) {
+        fileHandler = new FileClientHandler(filename, fileLength, defaultHandler);
+        channel.writeAndFlush(Command.DOWNLOAD.name() + SEPARATOR);
+
+        ChannelPipeline pipeline = channel.pipeline();
+        pipeline.remove("stringEncoder");
+        pipeline.remove("stringDecoder");
+        pipeline.replace("defaultHandler", "fileHandler", fileHandler);
     }
 
     /**
@@ -150,15 +178,16 @@ public class Network {
         channel.writeAndFlush(Command.DELETE.name() + SEPARATOR + path);
     }
 
-    // TODO: public void getFiles() {}
-
-
     public void close() {
         channel.close();
     }
 
-    public ClientHandler getHandler() {
-        return handler;
+    public DefaultClientHandler getDefaultHandler() {
+        return defaultHandler;
+    }
+
+    public FileClientHandler getFileHandler() {
+        return fileHandler;
     }
 
     public void setLoadCanceled(boolean loadCanceled) {

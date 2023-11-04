@@ -12,14 +12,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 /**
- * Хендлер, обрабатывающий байтовые данные файла
+ * Хендлер, обрабатывающий байтовые данные поступающего файла
  */
-public class FilesIOHandler extends ChannelInboundHandlerAdapter {
+public class ServerFileHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * Ссылка на дефолтный хендлер, который будет возвращен в конвейер
      */
     private final MainHandler defaultHandler;
+
     /**
      * Получаемый файл
      */
@@ -29,16 +30,19 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
      * Размер получаемого файла
      */
     private final long fileLength;
+
     /**
      * Путь к получаемому файлу
      */
     private final String path;
+
     /**
      * Флаг некорректной остановки загрузки
      */
     private boolean isLoadCanceled = false;
 
-    public FilesIOHandler(String path, long fileLength, MainHandler defaultHandler) {
+    public ServerFileHandler(String path, long fileLength, MainHandler defaultHandler) {
+
         this.path = path;
         this.file = new File(path);
         this.defaultHandler = defaultHandler;
@@ -96,10 +100,10 @@ public class FilesIOHandler extends ChannelInboundHandlerAdapter {
         ctx.pipeline().replace("fileHandler", "defaultHandler", defaultHandler);
 
         if (isLoadCanceled) {
-            MainHandler.getCommands().get("DELETE").execute(path);
-            ctx.writeAndFlush(Response.FAILED.name());
+            defaultHandler.getCommands().get("DELETE").execute(path);
+            ctx.writeAndFlush(Response.FAILED.name() + MainHandler.SEPARATOR);
         } else {
-            ctx.writeAndFlush(Response.LOADED.name());
+            ctx.writeAndFlush(Response.LOADED.name() + MainHandler.SEPARATOR);
         }
     }
 }

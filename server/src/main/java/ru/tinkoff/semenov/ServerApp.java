@@ -21,6 +21,7 @@ public class ServerApp {
      * Хост сервера
      */
     private static final String HOST = "localhost";
+
     /**
      * Порт сервера
      */

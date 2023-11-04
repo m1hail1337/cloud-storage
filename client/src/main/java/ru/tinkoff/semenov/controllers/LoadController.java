@@ -3,57 +3,92 @@ package ru.tinkoff.semenov.controllers;
 import io.netty.handler.stream.ChunkedFile;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
+
 import ru.tinkoff.semenov.Action;
 import ru.tinkoff.semenov.Network;
+import ru.tinkoff.semenov.Utils;
+import ru.tinkoff.semenov.enums.Response;
 
-import java.net.URL;
-import java.util.ResourceBundle;
+/**
+ * Контроллер окна отправки файла на сервер
+ */
+public class LoadController {
 
-
-public class LoadController implements Initializable {
-
+    /**
+     * Частота обновления шкалы прогресса (в миллисекундах)
+     */
     private static final int PROGRESSBAR_UPDATE_FREQ_MS = 100;
 
+    /**
+     * Передаваемый файл
+     */
     private ChunkedFile file;
+
+    /**
+     * Канал подключения к серверу
+     */
     private Network network;
+
+    /**
+     * Флаг успешной загрузки
+     */
     private boolean isFileLoaded = false;
 
+    /**
+     * Текст с информацией о статусе загрузки
+     */
     @FXML
     private Text infoText;
+
+    /**
+     * Шкала загрузки
+     */
     @FXML
-    private ProgressBar progress;
+    private ProgressBar progressBar;
+
+    /**
+     * Кнопка завершающая загрузку (закрывающая это окно)
+     */
     @FXML
     private Button finishButton;
 
+    /**
+     * Если получили сообщение, что файл успешно отправлен И сохранен переключаем соотв. флаг
+     * ({@link LoadController#isFileLoaded}), иначе выводим сообщение об ошибке
+     */
     private final Action loadAction = message -> {
-        if (message.equals("LOADED")) {
+        if (Utils.getStatus(message).equals(Response.LOADED.name())) {
             finishButton.setVisible(true);
-            progress.setProgress(1.0);
+            progressBar.setProgress(1.0);
             isFileLoaded = true;
             infoText.setFill(Color.GREEN);
             infoText.setText("Файл успешно сохранен.");
 
-        } else if (message.equals("FAILED")) {
+        } else if (Utils.getStatus(message).equals(Response.FAILED.name())) {
             infoText.setText("Ошибка на сервере");
             infoText.setFill(Color.RED);
         }
     };
 
+    /**
+     * Запускаем шкалу прогресса, подвязывая ее к процессу отправки файла.
+     * <br>*ВАЖНО*: Шкала подвязывается только к отправке. Поэтому, чтобы убедиться в том, что все
+     * байты ПОЛУЧЕНЫ и файл сохранен корректно ждем ответного сообщения. Пока ждем выводим, что программа не зависла.
+     */
     public void startProgress() {
-        network.getHandler().setAction(loadAction);
+        network.getDefaultHandler().setAction(loadAction);
 
         new Thread(() -> {
             while (file.currentOffset() < file.endOffset()) {
 
                 Platform.runLater(() -> {
-                    progress.setProgress((double) file.currentOffset() / file.endOffset());
+                    progressBar.setProgress((double) file.currentOffset() / file.endOffset());
                 });
                 try {
                     Thread.sleep(PROGRESSBAR_UPDATE_FREQ_MS);
@@ -69,18 +104,15 @@ public class LoadController implements Initializable {
         }).start();
     }
 
+    /**
+     * Закрытие окна, остановка отправки
+     */
     @FXML
     private void close() {
         Window window = finishButton.getScene().getWindow();
         Platform.runLater(() -> {
             window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
         });
-    }
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        progress.setProgress(0.0);
-        infoText.setText("Статус загрузки");
     }
 
     public boolean isFileLoaded() {

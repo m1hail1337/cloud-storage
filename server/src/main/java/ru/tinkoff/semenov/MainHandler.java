@@ -1,10 +1,12 @@
 package ru.tinkoff.semenov;
 
 import static io.netty.channel.ChannelHandler.Sharable;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import ru.tinkoff.semenov.commands.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +18,7 @@ import java.util.stream.Stream;
 
 /**
  * Серверный обработчик сообщений. Аннотация {@link Sharable} позволяет сохранить текущий хендлер и переключится на него
- * после передачи или загрузки файла.
+ * после загрузки файла.
  */
 @Sharable
 public class MainHandler extends SimpleChannelInboundHandler<String> {
@@ -25,15 +27,18 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
      * Путь к файлу с логинами и паролями пользователей
      */
     private static final String PATH_TO_AUTH_DATA = "server\\src\\main\\resources\\users.txt";
+
     /**
      * Путь к папке с директориями всех существующих пользователей
      */
     private static final String PATH_TO_USERS_DATA ="server\\src\\main\\resources\\dirs";
+
     /**
      * Разделитель между командой и аргументами сообщения. NB: изменять только в рамках
      * изменения политики передачи данных между сервером и клиентами
      */
     public static final String SEPARATOR = "|";
+
     /**
      * Мапа пользователей в формате логин-пароль
      */
@@ -42,7 +47,7 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
     /**
      * Мапа названий команд и их действий
      */
-    private static final Map<String, Command> commands = new HashMap<>() {{
+    private final Map<String, Command> commands = new HashMap<>() {{
         put("AUTH", new AuthCommand());
         put("REGISTER", new RegisterCommand());
         put("NEW_DIR", new NewDirCommand());
@@ -50,8 +55,20 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
         put("CUT", new CutCommand());
         put("COPY", new CopyCommand());
         put("LOAD", new LoadCommand());
-        // TODO:  put("GET_DATA", args -> {});
+        put("FILE_LENGTH", new FileLengthCommand(MainHandler.this));
+        put("DOWNLOAD", new DownloadCommand(MainHandler.this));
     }};
+
+    /**
+     * Текущий контекст канала
+     */
+    private ChannelHandlerContext context;
+
+    /**
+     * Последний запрошенный на скачивание файл
+     */
+    private File currentDownloadFile;
+
 
     /**
      * Метод срабатывающий сразу при подключении. В нем мы инициализируем данные о существующих пользователях
@@ -68,12 +85,13 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
      */
     @Override
     public void channelRead0(ChannelHandlerContext ctx, String msg) {
+        this.context = ctx;
         String command = msg.substring(0, msg.indexOf(SEPARATOR));
         String args = msg.substring(msg.indexOf(SEPARATOR) + 1);
         String response = commands.get(command).execute(args);
 
         if (command.equals("LOAD")) {
-            switchHandlerToFilesIO(ctx, args);
+            switchToFileHandler(ctx, args);
         }
 
         if (!response.equals(Response.EMPTY.name())) {
@@ -88,8 +106,7 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        ctx.close();
-        System.out.println("Клиент отключился");
+
         throw new RuntimeException("Ошибка сервера", cause);
     }
 
@@ -130,11 +147,11 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
      * @param ctx текущий контекст
      * @param args директория, куда будет производиться запись нового файла и размер файла (через {@link #SEPARATOR})
      */
-    private void switchHandlerToFilesIO(ChannelHandlerContext ctx, String args) {
+    private void switchToFileHandler(ChannelHandlerContext ctx, String args) {
         String filePath = args.substring(0, args.indexOf(SEPARATOR));
         long fileLength = Long.parseLong(args.substring(args.indexOf(SEPARATOR) + 1));
         ctx.pipeline().replace("defaultHandler", "fileHandler",
-                new FilesIOHandler(PATH_TO_USERS_DATA + "\\" + filePath, fileLength, this));
+                new ServerFileHandler(PATH_TO_USERS_DATA + "\\" + filePath, fileLength, this));
         ctx.pipeline().remove("stringDecoder");
         ctx.pipeline().remove("stringEncoder");
     }
@@ -151,7 +168,19 @@ public class MainHandler extends SimpleChannelInboundHandler<String> {
         return users;
     }
 
-    public static Map<String, Command> getCommands() {
+    public Map<String, Command> getCommands() {
         return commands;
+    }
+
+    public void setCurrentDownloadFile(File currentDownloadFile) {
+        this.currentDownloadFile = currentDownloadFile;
+    }
+
+    public File getCurrentDownloadFile() {
+        return currentDownloadFile;
+    }
+
+    public ChannelHandlerContext getContext() {
+        return context;
     }
 }
