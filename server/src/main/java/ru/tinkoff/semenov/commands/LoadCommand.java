@@ -7,11 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Команда, начинающая процесс закачки НА сервер файла пользователя. Создает файл, куда будут записываться полученные
- * байты.
- */
 public class LoadCommand implements Command {
+
     @Override
     public String execute(String args) {
         String path = args.substring(0, args.indexOf(ARGS_SEPARATOR));

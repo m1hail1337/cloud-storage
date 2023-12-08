@@ -10,41 +10,17 @@ import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 import ru.tinkoff.semenov.Network;
 
-/**
- * Контроллер окна скачивания файла с сервера
- */
 public class DownloadController {
 
-    /**
-     * Частота обновления шкалы прогресса (в миллисекундах)
-     */
     private static final int PROGRESSBAR_UPDATE_FREQ_MS = 100;
 
-    /**
-     * Канал подключения к серверу
-     */
     private Network network;
+    private boolean fileDownloaded = false;
 
-    /**
-     * Флаг успешного скачивания
-     */
-    private boolean isFileDownloaded = false;
-
-    /**
-     * Текст с информацией о состоянии скачивания
-     */
     @FXML
     private Text infoText;
-
-    /**
-     * Шкала прогресса
-     */
     @FXML
     private ProgressBar progressBar;
-
-    /**
-     * Кнопка отмены скачивания
-     */
     @FXML
     private Button finishButton;
 
@@ -56,10 +32,9 @@ public class DownloadController {
         new Thread(() -> {
             long targetLength = network.getFileHandler().getTargetFileLength();
             while (network.getFileHandler().getFile().length() < targetLength) {
-
-                Platform.runLater(() -> {
-                    progressBar.setProgress((double) network.getFileHandler().getFile().length() / targetLength);
-                });
+                Platform.runLater(() ->
+                    progressBar.setProgress((double) network.getFileHandler().getFile().length() / targetLength)
+                );
                 try {
                     Thread.sleep(PROGRESSBAR_UPDATE_FREQ_MS);
                 } catch (InterruptedException e) {
@@ -68,26 +43,23 @@ public class DownloadController {
             }
 
             progressBar.setProgress(1.0);
-            isFileDownloaded = true;
+            fileDownloaded = true;
             infoText.setText("Файл успешно скачан!");
             infoText.setFill(Color.GREEN);
             finishButton.setVisible(true);
         }).start();
     }
 
-    /**
-     * Метод закрывающий окно скачивания
-     */
     @FXML
     private void close() {
         Window window = finishButton.getScene().getWindow();
-        Platform.runLater(() -> {
-            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST));
-        });
+        Platform.runLater(() ->
+            window.fireEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSE_REQUEST))
+        );
     }
 
     public boolean isFileDownloaded() {
-        return isFileDownloaded;
+        return fileDownloaded;
     }
 
     public void setNetwork(Network network) {

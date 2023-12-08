@@ -14,14 +14,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Хендлер, обрабатывающий байтовые данные поступающего файла
- */
 public class FileClientHandler extends ChannelInboundHandlerAdapter {
 
-    /**
-     * Папка, куда сохраняются полученные файлы
-     */
     public static final String PATH_TO_DOWNLOADS = "client\\downloads";
 
     /**
@@ -29,30 +23,11 @@ public class FileClientHandler extends ChannelInboundHandlerAdapter {
      */
     private final DefaultClientHandler defaultHandler;
 
-    /**
-     * Ожидаемый объем получаемого файла
-     */
     private final long targetFileLength;
-
-    /**
-     * Получаемый файл записывается сюда
-     */
     private final File file;
+    private boolean downloadCanceled;
 
-    /**
-     * Флаг, говорящий о прекращении скачивания
-     */
-    private boolean isDownloadCanceled;
-
-    /**
-     * Помимо инициализации полей конструктор создает файл, куда будет вестись запись
-     *
-     * @param filename         имя скачиваемого файла
-     * @param targetFileLength размер скачиваемого файла
-     * @param defaultHandler   хендлер для работы со строковыми командами
-     */
     public FileClientHandler(String filename, long targetFileLength, DefaultClientHandler defaultHandler) {
-
         this.targetFileLength = targetFileLength;
         this.file = new File(PATH_TO_DOWNLOADS + "\\" + filename);
         this.defaultHandler = defaultHandler;
@@ -60,16 +35,10 @@ public class FileClientHandler extends ChannelInboundHandlerAdapter {
         try {
             Files.createFile(Path.of(PATH_TO_DOWNLOADS + "\\" + filename));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Не удаётся  сохранить файл", e);
         }
     }
 
-    /**
-     * Метод считывания поступающих данных.
-     *
-     * @param ctx текущий контекст канала
-     * @param msg переданные байты
-     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws IOException {
 
@@ -93,15 +62,9 @@ public class FileClientHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    /**
-     * При ошибке пробуем переключиться обратно в режим строковых команд, установив флаг отмены скачивания
-     *
-     * @param ctx   текущий контекст канала
-     * @param cause - ошибка
-     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        isDownloadCanceled = true;
+        downloadCanceled = true;
         switchToDefaultHandler(ctx);
         throw new RuntimeException("Ошибка в получении файла" + file.getName(), cause);
     }
@@ -117,7 +80,7 @@ public class FileClientHandler extends ChannelInboundHandlerAdapter {
         ctx.pipeline().addFirst("stringDecoder", new StringDecoder());
         ctx.pipeline().replace("fileHandler", "defaultHandler", defaultHandler);
 
-        if (isDownloadCanceled) {
+        if (downloadCanceled) {
             try {
                 Files.deleteIfExists(file.toPath());
             } catch (IOException e) {
@@ -127,7 +90,7 @@ public class FileClientHandler extends ChannelInboundHandlerAdapter {
     }
 
     public void setDownloadCanceled(boolean downloadCanceled) {
-        isDownloadCanceled = downloadCanceled;
+        this.downloadCanceled = downloadCanceled;
     }
 
     public long getTargetFileLength() {

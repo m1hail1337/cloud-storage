@@ -11,49 +11,22 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-/**
- * Хендлер, обрабатывающий байтовые данные поступающего файла
- */
 public class ServerFileHandler extends ChannelInboundHandlerAdapter {
 
-    /**
-     * Ссылка на дефолтный хендлер, который будет возвращен в конвейер
-     */
     private final MainHandler defaultHandler;
-
-    /**
-     * Получаемый файл
-     */
     private final File file;
-
-    /**
-     * Размер получаемого файла
-     */
     private final long fileLength;
-
-    /**
-     * Путь к получаемому файлу
-     */
     private final String path;
 
-    /**
-     * Флаг некорректной остановки загрузки
-     */
-    private boolean isLoadCanceled = false;
+    private boolean loadCanceled = false;
 
     public ServerFileHandler(String path, long fileLength, MainHandler defaultHandler) {
-
         this.path = path;
         this.file = new File(path);
         this.defaultHandler = defaultHandler;
         this.fileLength = fileLength;
     }
 
-    /**
-     * Метод считывания поступающих данных.
-     * @param ctx текущий контекст канала
-     * @param msg переданные байты
-     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf byteBuf = (ByteBuf) msg;
@@ -76,30 +49,19 @@ public class ServerFileHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    /**
-     * При ошибке пробуем переключиться обратно в режим строковых команд, удалив временный файл
-     * @param ctx текущий контекст канала
-     * @param cause - ошибка
-     */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        isLoadCanceled = true;
+        loadCanceled = true;
         switchToDefaultHandler(ctx);
         throw new RuntimeException("Ошибка в получении файла", cause);
     }
 
-    /**
-     * Если одно из стоп-значений принято мы возвращаем в конвейер строковые кодеры/декодеры и
-     * текущий хендлер меняем обратно на стандартный. Если отправка завершена некорректно - удаляем файл и отправляем
-     * {@link Response#FAILED}, если загрузка успешна - отправляем {@link Response#LOADED}.
-     * @param ctx текущий контекст канала
-     */
     private void switchToDefaultHandler(ChannelHandlerContext ctx) {
         ctx.pipeline().addFirst("stringEncoder", new StringEncoder());
         ctx.pipeline().addFirst("stringDecoder", new StringDecoder());
         ctx.pipeline().replace("fileHandler", "defaultHandler", defaultHandler);
 
-        if (isLoadCanceled) {
+        if (loadCanceled) {
             defaultHandler.getCommands().get("DELETE").execute(path);
             ctx.writeAndFlush(Response.FAILED.name() + MainHandler.SEPARATOR);
         } else {

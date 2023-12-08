@@ -7,9 +7,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Команда, создающая новую директорию(папку) на сервере в каталоге пользователя.
- */
 public class NewDirCommand implements Command {
 
     @Override
@@ -20,7 +17,8 @@ public class NewDirCommand implements Command {
         } catch (IOException e) {
             throw new RuntimeException(
                     "Не удалось создать папку " + newDirPath.getFileName() + "в " + newDirPath.getParent(),
-                    e);
+                    e
+            );
         }
         return Response.EMPTY.name();
     }

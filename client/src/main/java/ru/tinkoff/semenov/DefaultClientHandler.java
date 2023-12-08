@@ -11,16 +11,8 @@ import io.netty.channel.SimpleChannelInboundHandler;
 @Sharable
 public class DefaultClientHandler extends SimpleChannelInboundHandler<String> {
 
-    /**
-     * Текущая (или последняя выполненная) задача по обработке
-     */
     private Action currentAction;
 
-    /**
-     * Метод обрабатывает полученное сообщение в зависимости от текущего действия ({@link Action}) пользователя
-     * @param ctx текущий контекст канала передачи
-     * @param msg принятое сообщение
-     */
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, String msg) {
         currentAction.handle(msg);

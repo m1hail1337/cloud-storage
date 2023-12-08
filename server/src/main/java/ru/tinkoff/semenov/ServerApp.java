@@ -12,19 +12,9 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 
-/**
- * Точка запуска и настройки сервера.
- */
 public class ServerApp {
 
-    /**
-     * Хост сервера
-     */
     private static final String HOST = "localhost";
-
-    /**
-     * Порт сервера
-     */
     private static final int PORT = 8189;
 
     public static void main(String[] args) {

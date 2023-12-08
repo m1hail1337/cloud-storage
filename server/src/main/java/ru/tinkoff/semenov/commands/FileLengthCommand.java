@@ -7,26 +7,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Команда отправляет размер файла, который клиент хочет скачать
- */
 public class FileLengthCommand implements Command {
 
-    /**
-     * Храним ссылку на стандартный хендлер для того, чтобы обновлять поле файла, который пользователь запросил для
-     * скачивания.
-     */
     private final MainHandler handler;
 
     public FileLengthCommand(MainHandler handler) {
         this.handler = handler;
     }
 
-    /**
-     * @param args название файла
-     * @return Если такой файл есть возвращаем строку в формате FILE_LENGTH|N, где N - размер файла в байтах; если такого
-     * файла нет возвращаем FAILED.
-     */
     @Override
     public String execute(String args) {
         Path pathToFile = Path.of(MainHandler.getPathToUsersData() + FILE_SEPARATOR + args);

@@ -27,71 +27,26 @@ import java.util.ResourceBundle;
  */
 public class AuthController implements Initializable {
 
-    /**
-     * Информация о статусе входа пользователя
-     */
+    private static final String PATH_TO_REGISTER_PAGE = "/register.fxml";
+    private static final String PATH_TO_CATALOG_PAGE = "/catalog.fxml";
+    private static final int MAX_ATTEMPTS = 3;
+
     @FXML
     private Text attemptsInfo;
-
-    /**
-     * Поле ввода логина
-     */
     @FXML
     private TextField loginField;
-
-    /**
-     * Поле ввода пароля
-     */
     @FXML
     private PasswordField passwordField;
-
-    /**
-     * Кнопка авторизации
-     */
     @FXML
     private Button authButton;
-
-    /**
-     * Кнопка регистрации
-     */
     @FXML
     private Button regButton;
-
-    /**
-     * Кнопка перехода к каталогу. Открывается только после успешной авторизации
-     */
     @FXML
     private Button continueButton;
 
-    /**
-     * Путь к fxml-файлу со страницей регистрации
-     */
-    private static final String PATH_TO_REGISTER_PAGE = "/register.fxml";
-
-    /**
-     * Путь к fxml-файлу со страницей каталога
-     */
-    private static final String PATH_TO_CATALOG_PAGE = "/catalog.fxml";
-
-    /**
-     * Начальное количество попыток
-     */
-    private static final int MAX_ATTEMPTS = 3;
-
-    /**
-     * Текущее количество попыток
-     */
     private int currentAttempts = MAX_ATTEMPTS;
-
-    /**
-     * Канал подключения к серверу
-     */
     private Network network;
 
-    /**
-     * При успешной авторизации {@link AuthController#onSuccessAuth(String[] args)}, где args - данные пользователя с
-     * сервера, при неуспешной авторизации уменьшаем счетчик попыток, при окончании попыток блокируем интерфейс
-     */
     private final Action authAction = (message -> {
         currentAttempts--;
         if ((Utils.getStatus(message)).equals(Response.SUCCESS.name())) {
@@ -103,38 +58,23 @@ public class AuthController implements Initializable {
         }
     });
 
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        network = new Network();
+    }
 
-    /**
-     * Действие при нажатии на кнопку {@link AuthController#authButton}
-     */
     @FXML
     private void onAuthorize() {
         network.getDefaultHandler().setAction(authAction);
         network.authorize(loginField.getText().trim(), passwordField.getText().trim());
     }
 
-    /**
-     * Действие при нажатии на кнопку {@link AuthController#regButton}
-     */
     @FXML
     private void onRegister() {
         regButton.setDisable(true);
         showRegisterStage();
     }
 
-
-    /**
-     * При инициализации подключаемся к серверу
-     */
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        network = new Network();
-    }
-
-    /**
-     * Изменяем интерфейс при успешной авторизации
-     * @param args данные пользователя пришедшие с сервера
-     */
     private void onSuccessAuth(String[] args) {
         attemptsInfo.setText("Добро пожаловать, " + loginField.getText() + "!");
         attemptsInfo.setFill(Color.GREEN);
@@ -144,10 +84,6 @@ public class AuthController implements Initializable {
         showButtonToCatalog(args);
     }
 
-    /**
-     * Метод позволяет вставить логин и пароль в соответствующие поля, если пользователь успешно зарегистрировался
-     * @param controller контроллер окна регистрации
-     */
     private void onSuccessRegistered(RegisterController controller) {
         if (controller.getRegisteredUser() != null) {
             loginField.setText(controller.getRegisteredUser().login());
@@ -160,9 +96,6 @@ public class AuthController implements Initializable {
         }
     }
 
-    /**
-     * При окончании попыток блокируем интерфейс, можно только зарегистрироваться
-     */
     private void onAttemptsOver() {
         attemptsInfo.setText("Попытки закончились...");
         attemptsInfo.setFill(Color.RED);
@@ -171,9 +104,6 @@ public class AuthController implements Initializable {
         authButton.setDisable(true);
     }
 
-    /**
-     * Пока регистрируемся в форме ничего нельзя делать
-     */
     private void onRegisteredDisable() {
         authButton.setDisable(false);
         loginField.setDisable(false);
@@ -182,21 +112,14 @@ public class AuthController implements Initializable {
         passwordField.setEditable(false);
     }
 
-    /**
-     * По нажатию кнопки {@link AuthController#continueButton} переходим к каталогу
-     * @param userPaths массив с путями для каждого файла пользователя на сервере
-     */
     private void showButtonToCatalog(String[] userPaths) {
         continueButton.setTextFill(Color.GREEN);
         continueButton.setVisible(true);
-        continueButton.setOnAction(event -> {
-            showCatalogStage(userPaths);
-        });
+        continueButton.setOnAction(event ->
+            showCatalogStage(userPaths)
+        );
     }
 
-    /**
-     * Открываем окно регистрации
-     */
     private void showRegisterStage() {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(PATH_TO_REGISTER_PAGE));
@@ -218,11 +141,6 @@ public class AuthController implements Initializable {
         }
     }
 
-
-    /**
-     * Открываем каталог и закрываем окно авторизации
-     * @param userPaths массив с путями для каждого файла пользователя на сервере
-     */
     private void showCatalogStage(String[] userPaths) {
         try {
             FXMLLoader fxmlLoaderCatalog = new FXMLLoader(Main.class.getResource(PATH_TO_CATALOG_PAGE));
@@ -234,9 +152,9 @@ public class AuthController implements Initializable {
             stage.setTitle("Каталог");
             stage.setScene(catalog);
             ((Stage) continueButton.getScene().getWindow()).close();
-            stage.setOnCloseRequest(event -> {
-                network.close();
-            });
+            stage.setOnCloseRequest(event ->
+                network.close()
+            );
             stage.show();
         } catch (IOException e) {
             throw new RuntimeException(e);

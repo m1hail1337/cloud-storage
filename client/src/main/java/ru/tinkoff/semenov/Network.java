@@ -21,26 +21,15 @@ import ru.tinkoff.semenov.enums.Command;
  * <br>*ВАЖНО*: даже в команду без аргументов необходимо добавить {@link Network#SEPARATOR}!
  */
 public class Network {
-    /**
-     * Разделитель между командами и её аргументами
-     */
+
     public static final String SEPARATOR = "|";
-    /**
-     * Хост сервера
-     */
+
     private static final String HOST = "localhost";
-    /**
-     * Порт подключения к серверу
-     */
     private static final int PORT = 8189;
-    /**
-     * Канал соединения с сервером по которому идет взаимодействие
-     */
-    private SocketChannel channel;
-    /**
-     * Обработчик сообщений клиента
-     */
+
     private final DefaultClientHandler defaultHandler = new DefaultClientHandler();
+
+    private SocketChannel channel;
     private FileClientHandler fileHandler;
     private boolean loadCanceled;
 
@@ -72,58 +61,28 @@ public class Network {
                 workerGroup.shutdownGracefully();
             }
         });
+        t.setDaemon(true);
         t.start();
     }
 
-    /**
-     * Отправка на сервер команды для регистрации нового пользователя
-     *
-     * @param login    логин нового пользователя
-     * @param password пароль нового пользователя
-     */
     public void register(String login, String password) {
         channel.writeAndFlush(Command.REGISTER.name() + SEPARATOR + login.length() + login + password);
     }
 
-    /**
-     * Отправка на сервер команды авторизации
-     *
-     * @param login    логин пользователя
-     * @param password пароль пользователя
-     */
     public void authorize(String login, String password) {
         channel.writeAndFlush(Command.AUTH.name() + SEPARATOR + login.length() + login + password);
     }
 
-    /**
-     * Отправка на сервер команды перемещения (вырезки) файла
-     *
-     * @param file        название файла (который вырезаем)
-     * @param destination точка назначение (куда вставляем)
-     */
     public void cutFile(String file, String destination) {
         channel.writeAndFlush(Command.CUT.name() + SEPARATOR + file + SEPARATOR + destination);
     }
 
-    /**
-     * Отправка на сервер команды копирования файла
-     *
-     * @param file        название файла (который вырезаем)
-     * @param destination точка назначение (куда вставляем)
-     */
     public void copyFile(String file, String destination) {
         channel.writeAndFlush(Command.COPY.name() + SEPARATOR + file + SEPARATOR + destination);
     }
 
-    /**
-     * Отправка на сервер файла пользователя
-     *
-     * @param file        файл для передачи
-     * @param destination путь к папке, где файл будет сохранен на сервере
-     */
     public void loadFile(ChunkedFile file, String destination) {
         channel.writeAndFlush(Command.LOAD.name() + SEPARATOR + destination + SEPARATOR + file.length());
-
         new Thread(() -> {
             try {
                 while (!file.isEndOfInput() && !loadCanceled) {
@@ -136,22 +95,12 @@ public class Network {
         }).start();
     }
 
-    /**
-     * Отправляем запрос на получение файла с сервера, конкретно размер файла.
-     * @param filePath путь к файлу
-     */
     public void downloadRequest(String filePath) {
         channel.writeAndFlush(Command.FILE_LENGTH.name() + SEPARATOR + filePath);
     }
 
-    /**
-     * При успешном получении размера файла проводим манипуляции с конвейером обработчиков для настройки его на получение
-     * файловых байтов и отправляем команду, которая начинает отправку фрагментов файла.
-     * @param filename имя скачиваемого файла
-     * @param fileLength размер скачиваемого файла (в байтах)
-     */
-    public void downloadFile(String filename, long fileLength) {
-        fileHandler = new FileClientHandler(filename, fileLength, defaultHandler);
+    public void downloadRequestedFile(String filename, long fileLength) {
+        this.fileHandler = new FileClientHandler(filename, fileLength, defaultHandler);
         channel.writeAndFlush(Command.DOWNLOAD.name() + SEPARATOR);
 
         ChannelPipeline pipeline = channel.pipeline();
@@ -160,20 +109,10 @@ public class Network {
         pipeline.replace("defaultHandler", "fileHandler", fileHandler);
     }
 
-    /**
-     * Отправка на сервер команды создания новой директории
-     *
-     * @param path путь к новой директории
-     */
     public void createNewDirectory(String path) {
         channel.writeAndFlush(Command.NEW_DIR.name() + SEPARATOR + path);
     }
 
-    /**
-     * Отправка на сервер команды удаления файла
-     *
-     * @param path путь к файлу (который хотим удалить)
-     */
     public void deleteFile(String path) {
         channel.writeAndFlush(Command.DELETE.name() + SEPARATOR + path);
     }

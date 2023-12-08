@@ -10,10 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
-/**
- * Команда удаления файла/директории с сервера. Если это директория, то также удалятся и все файлы внутри.
- */
 public class DeleteCommand implements Command {
+
     @Override
     public String execute(String path) {
         Path filePath = Path.of(MainHandler.getPathToUsersData() + FILE_SEPARATOR + path);

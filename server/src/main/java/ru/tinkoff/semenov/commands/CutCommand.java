@@ -7,11 +7,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Команда ("Вырезать") перемещения файла. Отличается от копирования ({@link CopyCommand}) тем, что удаляет файл из его
- * предыдущего места.
- */
-public class CutCommand implements Command{
+public class CutCommand implements Command {
+
     @Override
     public String execute(String args) {
         Path from = Path.of(
